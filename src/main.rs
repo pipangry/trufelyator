@@ -3,6 +3,7 @@ use std::io;
 use std::io::Write;
 use std::iter::Peekable;
 use std::str::CharIndices;
+use std::time::Instant;
 
 fn main() {
     println!("Enter your mathematical expression:");
@@ -12,11 +13,17 @@ fn main() {
     io::stdin().read_line(&mut input)
         .expect("Failed to read line");
 
+    // Track time
+    let time_start = Instant::now();
     let result = calculate(input.trim());
+    let duration = time_start.elapsed().as_secs_f64() * 1000.0;
+    
     match result {
         Err(message) => println!("Error: {}", message),
         Ok(result) => println!("{}", result)
     }
+    
+    println!("Done in {:.5}ms", duration);
 }
 
 /// Calculator abstract syntax token. Can be number, operator or parentheses bracket
