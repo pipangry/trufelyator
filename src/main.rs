@@ -38,6 +38,7 @@ pub enum Token {
     Divide,
     Modulo,
     Pow,
+    Factorial,
 
     /* Parentheses */
     LeftParen,
