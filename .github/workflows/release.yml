@@ -31,7 +31,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}  # Correct variable syntax
+          target: ${{ matrix.target }}
           profile: minimal
 
       - name: Install Windows Dependencies (Linux Runner)
