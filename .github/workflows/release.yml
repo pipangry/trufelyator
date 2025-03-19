@@ -11,34 +11,34 @@ jobs:
         include:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            ext: ''
+            ext: ""
           - target: x86_64-pc-windows-msvc
             os: ubuntu-latest
-            ext: '.exe'
-          - target: x86_64-apple-darwin
+            ext: ".exe"
+          - target: x86_64-apple-darwin  # Intel macOS
             os: macos-latest
-            ext: ''
-      fail-fast: false  # Prevent job cancellations
+            ext: ""
+      fail-fast: false
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust and Target
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust + Target
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+          target: ${{ matrix.target }}  # Correct variable syntax
+          profile: minimal
 
-      - name: Install Mingw Dependencies (Windows Target)
-        if: matrix.target == 'x86_64-pc-windows-msvc'
-        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64
+      - name: Install Windows Dependencies (Linux Runner)
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-pc-windows-msvc'
+        run: sudo apt-get install -y gcc-mingw-w64
 
-      - name: Build Release Binary
+      - name: Build Binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Upload Release Asset
+      - name: Upload Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,4 +46,4 @@ jobs:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: target/${{ matrix.target }}/release/myapp${{ matrix.ext }}
           asset_name: myapp-${{ github.event.release.tag_name }}-${{ matrix.target }}${{ matrix.ext }}
-          asset_content_type: application/octet-stream  # Fix MIME type error
+          asset_content_type: application/octet-stream
