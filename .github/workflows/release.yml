@@ -9,38 +9,34 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-latest
-            name: linux
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
             ext: ''
-          - runner: macos-latest
-            name: macos
-            ext: ''
-          - runner: windows-latest
-            name: windows
+          - target: x86_64-pc-windows-msvc
+            os: ubuntu-latest
             ext: '.exe'
-    runs-on: ${{ matrix.runner }}
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            ext: ''
+      fail-fast: false  # Prevent job cancellations
+
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust and Target
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: ${{ matrix.target }}
           override: true
 
-      - name: Build Release
-        run: cargo build --release
+      - name: Install Mingw Dependencies (Windows Target)
+        if: matrix.target == 'x86_64-pc-windows-msvc'
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64
 
-      - name: Get architecture
-        id: get_arch
-        run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
-          elif [[ "$RUNNER_OS" == "macOS" ]]; then
-            echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
-          elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "arch=$(echo %PROCESSOR_ARCHITECTURE%)" >> $GITHUB_OUTPUT
-          fi
+      - name: Build Release Binary
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -48,5 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: target/release/myapp${{ matrix.ext }}
-          asset_name: myapp-${{ github.event.release.tag_name }}-${{ steps.get_arch.outputs.arch }}-${{ matrix.name }}${{ matrix.ext }}
+          asset_path: target/${{ matrix.target }}/release/myapp${{ matrix.ext }}
+          asset_name: myapp-${{ github.event.release.tag_name }}-${{ matrix.target }}${{ matrix.ext }}
+          asset_content_type: application/octet-stream  # Fix MIME type error
