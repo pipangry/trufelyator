@@ -1,42 +1,52 @@
-name: Build and Release
+name: Build Release Binaries
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'  # Trigger on version tags
+  release:
+    types: [published]
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-pc-windows-msvc]
-
+        include:
+          - runner: ubuntu-latest
+            name: linux
+            ext: ''
+          - runner: macos-latest
+            name: macos
+            ext: ''
+          - runner: windows-latest
+            name: windows
+            ext: '.exe'
+    runs-on: ${{ matrix.runner }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up Rust
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
 
-      - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Build Release
+        run: cargo build --release
 
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag: ${{ github.ref }}
+      - name: Get architecture
+        id: get_arch
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            echo "arch=$(uname -m)" >> $GITHUB_OUTPUT
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo "arch=$(echo %PROCESSOR_ARCHITECTURE%)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload binaries
-        uses: softprops/action-gh-release@v1
         with:
-          tag: ${{ github.ref }}
-          files: |
-            target/${{ matrix.target }}/release/your_binary_name
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: target/release/myapp${{ matrix.ext }}
+          asset_name: myapp-${{ github.event.release.tag_name }}-${{ steps.get_arch.outputs.arch }}-${{ matrix.name }}${{ matrix.ext }}
