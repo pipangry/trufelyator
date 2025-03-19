@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Build
+      run: cargo build --release
+
+    - name: Prepare Release Asset
+      run: |
+        mkdir -p release
+        cp target/release/release_binary release/
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: release/your_binary_name
+        asset_name: release_binary-${{ matrix.os }}.zip
+        asset_content_type: application/zip
+
+    - name: Zip the binary
+      run: |
+        cd release
+        zip release_binary-${{ matrix.os }}.zip release_binary
