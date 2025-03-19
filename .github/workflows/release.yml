@@ -44,6 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: target/${{ matrix.target }}/release/myapp${{ matrix.ext }}
+          asset_path: target/${{ matrix.target }}/release/trufelyator${{ matrix.ext }}
           asset_name: myapp-${{ github.event.release.tag_name }}-${{ matrix.target }}${{ matrix.ext }}
           asset_content_type: application/octet-stream
