@@ -32,7 +32,6 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-          profile: minimal
 
       - name: Install Windows Dependencies (Linux Runner)
         if: matrix.os == 'ubuntu-latest' && matrix.target == 'x86_64-pc-windows-gnu'
@@ -43,10 +42,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 
       - name: Build Binary
-        run: |
-          export RUSTFLAGS="-C target-feature=+crt-static -C link-args=-s -C panic=abort"
-          export CARGO_PROFILE_RELEASE_LTO=true
-          cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload Asset
         uses: actions/upload-release-asset@v1
