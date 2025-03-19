@@ -1,43 +1,60 @@
-name: Build and Release
+name: release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: 'v*'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  create_release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+  upload_assets:
+    needs: create_release
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
+        include:
+          - os: ubuntu-latest
+            artifact_name: pc
+            asset_name: pc-linux-x64.tar.gz
+          - os: macos-latest
+            artifact_name: pc
+            asset_name: pc-darwin-x64.tar.gz
+          - os: windows-latest
+            artifact_name: pc.exe
+            asset_name: pc-win-x64.tar.gz
+    runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout code
+    - name: checkout the source code
       uses: actions/checkout@v2
-
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
+    - name: build (release)
+      run: cargo build --verbose --release
+    - name: compress
+      uses: master-atul/tar-action@v1.0.2
       with:
-        toolchain: stable
-        override: true
-
-    - name: Build
-      run: cargo build --release
-
-    - name: Prepare Release Asset
-      run: |
-        mkdir -p release
-        cp target/release/trufelyator release/
-
-    - name: Upload Release Asset
+        command: c
+        cwd: ./target/release
+        files: |
+          ${{ matrix.artifact_name }}
+        outPath: ./target/release/${{ matrix.asset_name }}
+    - name: upload release assets
+      id: upload-release-assets
       uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: release/your_binary_name
-        asset_name: release_binary-${{ matrix.os }}.zip
-        asset_content_type: application/zip
-
-    - name: Zip the binary
-      run: |
-        cd release
-        zip release_binary-${{ matrix.os }}.zip release_binary
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_path: ./target/release/${{ matrix.asset_name }}
+        asset_name: ${{ matrix.asset_name }}
+        asset_content_type: application/tar+gzip
