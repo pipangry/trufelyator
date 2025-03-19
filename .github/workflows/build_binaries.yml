@@ -27,7 +27,7 @@ jobs:
     - name: Prepare Release Asset
       run: |
         mkdir -p release
-        cp target/release/release_binary release/
+        cp target/release/trufelyator release/
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
