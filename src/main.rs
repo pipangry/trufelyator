@@ -17,12 +17,12 @@ fn main() {
     let time_start = Instant::now();
     let result = calculate(input.trim());
     let duration = time_start.elapsed().as_secs_f64() * 1000.0;
-    
+
     match result {
         Err(message) => println!("Error: {}", message),
         Ok(result) => println!("{}", result)
     }
-    
+
     println!("Done in {:.5}ms", duration);
 }
 
@@ -82,7 +82,7 @@ impl std::fmt::Display for CalculateError<'_> {
 /// println!("Tokens: {}", tokens);
 /// ```
 /// We should get:
-/// 
+///
 /// `Token::Number(1)`, `Token::Minus`, `Token::Number(89)`, `Token::Multiply`,
 /// `Token::LeftParen`, `Token::Number(23)`, `Token::Plus`, `Token::Number(2)`,
 /// `Token::RightParen`
